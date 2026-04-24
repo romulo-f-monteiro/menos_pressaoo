@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora Nutricional</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- html2pdf Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+    <style>
+        /* Pequenos ajustes para impressão PDF */
+        .pdf-content { background-color: white !important; }
+    </style>
+</head>
+<body class="bg-slate-50 font-sans text-slate-800 min-h-screen py-8 px-4">
+
+    <div class="max-w-4xl mx-auto space-y-8">
+        
+        <!-- Cabeçalho -->
+        <div class="text-center space-y-2">
+            <div class="inline-flex items-center justify-center p-3 bg-blue-600 rounded-full text-white mb-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+            </div>
+            <h1 class="text-3xl font-bold text-slate-900">Calculadora Nutricional</h1>
+            <p class="text-slate-500">Avaliação rápida de IMC, metas de peso e circunferência da cintura.</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-8">
+            
+            <!-- Coluna do Formulário -->
+            <div id="form-column" class="md:col-span-5 bg-white p-6 rounded-2xl shadow-sm border border-slate-100 h-fit">
+                <h2 class="text-xl font-semibold mb-6 flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    Dados do Paciente
+                </h2>
+                
+                <form id="calc-form" class="space-y-4">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Idade</label>
+                            <input type="number" id="idade" required placeholder="Anos" class="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all" />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Sexo</label>
+                            <select id="sexo" class="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all bg-white">
+                                <option value="F">Feminino</option>
+                                <option value="M">Masculino</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Peso (kg)</label>
+                            <input type="number" step="0.1" id="peso" required placeholder="Ex: 85.5" class="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all" />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Altura (m)</label>
+                            <input type="number" step="0.01" id="altura" required placeholder="Ex: 1.65" class="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all" />
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Circunferência da Cintura (cm)</label>
+                        <input type="number" step="0.1" id="cintura" required placeholder="Ex: 92" class="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all" />
+                    </div>
+
+                    <button type="submit" class="w-full mt-6 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors flex justify-center items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="M7 21h10"/><path d="M12 3v18"/><path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"/></svg>
+                        Calcular Avaliação
+                    </button>
+                </form>
+            </div>
+
+            <!-- Coluna dos Resultados -->
+            <div id="results-column" class="md:col-span-7">
+                
+                <!-- Estado Inicial (Vazio) -->
+                <div id="empty-state" class="h-full bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col items-center justify-center text-slate-400 min-h-[400px]">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="mb-4 opacity-50"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+                    <p class="mt-2 text-center max-w-sm">
+                        Preencha os dados ao lado e clique em calcular para visualizar a avaliação completa, gerar PDF ou escanear via celular.
+                    </p>
+                </div>
+
+                <!-- Container de Resultados (Escondido inicialmente) -->
+                <div id="results-container" class="hidden space-y-6">
+                    
+                    <!-- Ações -->
+                    <div class="flex flex-col sm:flex-row gap-3">
+                        <button onclick="gerarPDF()" class="flex-1 bg-slate-900 hover:bg-slate-800 text-white py-2.5 px-4 rounded-lg font-medium transition-colors flex items-center justify-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+                            Baixar Relatório PDF
+                        </button>
+                        <button onclick="abrirModalQR()" class="flex-1 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 py-2.5 px-4 rounded-lg font-medium transition-colors flex items-center justify-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="5" height="5" x="3" y="3" rx="1"/><rect width="5" height="5" x="16" y="3" rx="1"/><rect width="5" height="5" x="3" y="16" rx="1"/><path d="M21 16h-3a2 2 0 0 0-2 2v3"/><path d="M21 21v.01"/><path d="M12 7v3a2 2 0 0 1-2 2H7"/><path d="M3 12h.01"/><path d="M12 3h.01"/><path d="M12 16v.01"/><path d="M16 12h1"/><path d="M21 12v.01"/><path d="M12 21v-1"/></svg>
+                            Mostrar QR Code
+                        </button>
+                    </div>
+
+                    <!-- Relatório Visual para PDF -->
+                    <div id="report-content" class="bg-white p-8 rounded-2xl shadow-sm border border-slate-100 pdf-content">
+                        <!-- Conteúdo injetado via JS -->
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Modal QR Code -->
+    <div id="qr-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/50 p-4">
+        <div class="bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl space-y-4">
+            <h3 class="text-lg font-bold text-center text-slate-800">Escanear Resultados</h3>
+            <p class="text-sm text-center text-slate-500">
+                Peça para o paciente apontar a câmera do celular. <br/> (Ele verá um texto resumo com as metas na tela).
+            </p>
+            <div class="flex justify-center p-4 bg-slate-50 rounded-xl">
+                <img id="qr-image" src="" alt="QR Code com resultados" class="w-48 h-48" />
+            </div>
+            <button onclick="fecharModalQR()" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold py-2 px-4 rounded-lg transition-colors">
+                Fechar
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Variável global para armazenar os resultados e gerar o QR Code
+        let currentResults = null;
+
+        // NOVO: Verificar se há dados na URL (quando o paciente escaneia o QR Code)
+        window.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const shareData = urlParams.get('share');
+            
+            if (shareData) {
+                try {
+                    // Decodificar os dados da URL
+                    const decodedStr = decodeURIComponent(escape(atob(shareData)));
+                    currentResults = JSON.parse(decodedStr);
+
+                    // Ocultar o formulário para focar só no relatório na tela do celular
+                    document.getElementById('form-column').style.display = 'none';
+                    document.getElementById('results-column').classList.remove('md:col-span-7');
+                    document.getElementById('results-column').classList.add('w-full', 'max-w-3xl', 'mx-auto');
+
+                    renderizarRelatorio();
+
+                    // Disparar o download do PDF automaticamente após carregar a página
+                    setTimeout(() => {
+                        gerarPDF();
+                    }, 1500); // 1.5s de atraso para garantir que a biblioteca do PDF carregou
+                } catch (e) {
+                    console.error("Erro ao ler os dados compartilhados", e);
+                }
+            }
+        });
+
+        document.getElementById('calc-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            // Obter valores
+            const idade = parseInt(document.getElementById('idade').value);
+            const sexo = document.getElementById('sexo').value;
+            const peso = parseFloat(document.getElementById('peso').value.replace(',', '.'));
+            let altura = parseFloat(document.getElementById('altura').value.replace(',', '.'));
+            const cintura = parseFloat(document.getElementById('cintura').value.replace(',', '.'));
+
+            if (altura > 3) altura = altura / 100; // Converte se digitado em cm
+
+            if (!peso || !altura || !cintura || !idade) {
+                alert("Por favor, preencha todos os campos numéricos corretamente.");
+                return;
+            }
+
+            // Cálculos IMC
+            const imc = peso / (altura * altura);
+            const isIdoso = idade >= 60;
+            
+            let classificacao = '';
+            let corRisco = 'text-green-600';
+            let bgRisco = 'bg-green-100';
+
+            if (isIdoso) {
+                if (imc < 22) { classificacao = 'Baixo peso'; corRisco = 'text-blue-600'; bgRisco = 'bg-blue-100'; }
+                else if (imc >= 22 && imc < 27) { classificacao = 'Adequado (Eutrófico)'; corRisco = 'text-green-600'; bgRisco = 'bg-green-100'; }
+                else { classificacao = 'Sobrepeso'; corRisco = 'text-orange-600'; bgRisco = 'bg-orange-100'; }
+            } else {
+                if (imc < 18.5) { classificacao = 'Abaixo do peso'; corRisco = 'text-blue-600'; bgRisco = 'bg-blue-100'; }
+                else if (imc >= 18.5 && imc <= 24.9) { classificacao = 'Peso normal'; corRisco = 'text-green-600'; bgRisco = 'bg-green-100'; }
+                else if (imc >= 25 && imc <= 29.9) { classificacao = 'Sobrepeso'; corRisco = 'text-orange-500'; bgRisco = 'bg-orange-100'; }
+                else if (imc >= 30 && imc <= 34.9) { classificacao = 'Obesidade Grau I'; corRisco = 'text-red-500'; bgRisco = 'bg-red-100'; }
+                else if (imc >= 35 && imc <= 39.9) { classificacao = 'Obesidade Grau II'; corRisco = 'text-red-600'; bgRisco = 'bg-red-100'; }
+                else { classificacao = 'Obesidade Grau III'; corRisco = 'text-red-700'; bgRisco = 'bg-red-200'; }
+            }
+
+            // Metas de Peso
+            const imcMaxNormal = isIdoso ? 26.9 : 24.9;
+            const pesoIdealMaximo = imcMaxNormal * (altura * altura);
+            const kgParaPerder = peso > pesoIdealMaximo ? peso - pesoIdealMaximo : 0;
+            
+            const perda5 = peso * 0.05;
+            const pesoMeta5 = peso - perda5;
+            
+            const perda10 = peso * 0.10;
+            const pesoMeta10 = peso - perda10;
+
+            // Metas de Cintura (CC)
+            const limiteCintura = sexo === 'F' ? 88 : 102;
+            const statusCintura = cintura < limiteCintura ? 'Normal' : 'Elevada (Risco)';
+            const cmParaPerderCintura = cintura >= limiteCintura ? cintura - (limiteCintura - 1) : 0;
+
+            // Salvar resultados na variável global
+            currentResults = {
+                idade,
+                sexo: sexo === 'F' ? 'Fem.' : 'Masc.',
+                imc: imc.toFixed(1),
+                classificacao,
+                corRisco,
+                bgRisco,
+                pesoAtual: peso.toFixed(1),
+                pesoIdeal: pesoIdealMaximo.toFixed(1),
+                kgParaPerder: kgParaPerder.toFixed(1),
+                perda5: perda5.toFixed(1),
+                pesoMeta5: pesoMeta5.toFixed(1),
+                perda10: perda10.toFixed(1),
+                pesoMeta10: pesoMeta10.toFixed(1),
+                cinturaAtual: cintura.toFixed(1),
+                statusCintura,
+                limiteCintura,
+                cmParaPerderCintura: cmParaPerderCintura.toFixed(1),
+                data: new Date().toLocaleDateString('pt-BR')
+            };
+
+            renderizarRelatorio();
+        });
+
+        function renderizarRelatorio() {
+            const res = currentResults;
+            const reportContainer = document.getElementById('report-content');
+            
+            let metasIntermediariasHTML = '';
+            
+            if (parseFloat(res.kgParaPerder) > 0) {
+                metasIntermediariasHTML = `
+                    <div class="bg-blue-50/50 p-5 rounded-xl border border-blue-100">
+                        <h3 class="text-blue-900 font-semibold mb-3">Plano de Pequenas Metas (Realistas)</h3>
+                        <p class="text-sm text-blue-800 mb-4">Perdas de 5% a 10% do peso inicial já promovem grandes melhorias na saúde metabólica.</p>
+                        
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="bg-white p-3 rounded-lg shadow-sm border border-blue-50 text-center">
+                                <p class="text-xs text-slate-500 font-medium uppercase mb-1">Meta de 5%</p>
+                                <p class="text-lg font-bold text-blue-700">${res.pesoMeta5} kg</p>
+                                <p class="text-xs text-blue-600 mt-1">Perder ${res.perda5} kg</p>
+                            </div>
+                            <div class="bg-white p-3 rounded-lg shadow-sm border border-blue-50 text-center">
+                                <p class="text-xs text-slate-500 font-medium uppercase mb-1">Meta de 10%</p>
+                                <p class="text-lg font-bold text-blue-700">${res.pesoMeta10} kg</p>
+                                <p class="text-xs text-blue-600 mt-1">Perder ${res.perda10} kg</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            const metaPesoIdealInfo = parseFloat(res.kgParaPerder) > 0 
+                ? `<div class="pt-2 mt-2 border-t border-slate-200">
+                        <p class="flex justify-between text-blue-600 font-semibold">
+                            <span>Redução Necessária:</span> 
+                            <span>-${res.kgParaPerder} kg</span>
+                        </p>
+                   </div>`
+                : `<div class="pt-2 mt-2 border-t border-slate-200">
+                        <p class="text-green-600 font-semibold">Você está no peso ideal!</p>
+                   </div>`;
+
+            const metaCinturaInfo = parseFloat(res.cmParaPerderCintura) > 0
+                ? `<div class="pt-2 mt-2 border-t border-slate-200">
+                        <p class="flex justify-between text-orange-600 font-semibold">
+                            <span>Redução Necessária:</span> 
+                            <span>-${res.cmParaPerderCintura} cm</span>
+                        </p>
+                   </div>`
+                : `<div class="pt-2 mt-2 border-t border-slate-200">
+                        <p class="text-green-600 font-semibold">Cintura dentro do normal!</p>
+                   </div>`;
+
+            reportContainer.innerHTML = `
+                <div class="border-b border-slate-200 pb-4 mb-6">
+                    <h2 class="text-2xl font-bold text-slate-900">Relatório de Avaliação Nutricional</h2>
+                    <div class="flex justify-between items-center mt-2 text-sm text-slate-500">
+                        <p><strong>Paciente:</strong> ${res.idade} anos | ${res.sexo}</p>
+                        <p><strong>Data:</strong> ${res.data}</p>
+                    </div>
+                </div>
+
+                <div class="p-5 rounded-xl border mb-6 ${res.bgRisco} border-opacity-50">
+                    <p class="text-sm font-semibold uppercase tracking-wider opacity-70 mb-1 text-slate-800">Seu Diagnóstico de IMC</p>
+                    <div class="flex items-end gap-3">
+                        <span class="text-5xl font-extrabold ${res.corRisco}">${res.imc}</span>
+                        <span class="text-xl font-bold pb-1 ${res.corRisco}">${res.classificacao}</span>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                        <h3 class="text-slate-800 font-semibold mb-2">Meta: Peso Saudável</h3>
+                        <div class="space-y-1 text-sm">
+                            <p class="flex justify-between"><span>Peso Limite Ideal:</span> <span class="font-bold">${res.pesoIdeal} kg</span></p>
+                            ${metaPesoIdealInfo}
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                        <h3 class="text-slate-800 font-semibold mb-2">Circunferência da Cintura</h3>
+                        <div class="space-y-1 text-sm">
+                            <p class="flex justify-between"><span>Medida Atual:</span> <span class="font-bold">${res.cinturaAtual} cm</span></p>
+                            <p class="flex justify-between"><span>Limite Saudável:</span> <span>&lt; ${res.limiteCintura} cm</span></p>
+                            ${metaCinturaInfo}
+                        </div>
+                    </div>
+                </div>
+
+                ${metasIntermediariasHTML}
+
+                <div class="mt-8 text-center text-xs text-slate-400">
+                    <p>Documento gerado pela Calculadora Nutricional Automática</p>
+                </div>
+            `;
+
+            // Trocar visibilidade
+            document.getElementById('empty-state').classList.add('hidden');
+            document.getElementById('results-container').classList.remove('hidden');
+        }
+
+        function gerarPDF() {
+            if (typeof window.html2pdf === 'undefined') {
+                alert("A biblioteca de PDF ainda está carregando. Tente novamente em alguns segundos.");
+                return;
+            }
+            
+            // Exibir mensagem de feedback visual caso esteja no celular gerando automático
+            const originalBtnText = document.querySelector('button[onclick="gerarPDF()"]').innerHTML;
+            document.querySelector('button[onclick="gerarPDF()"]').innerHTML = "Gerando PDF...";
+
+            const element = document.getElementById('report-content');
+            const opt = {
+                margin:       10,
+                filename:     `Avaliacao_Nutricional.pdf`,
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2, useCORS: true },
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+
+            html2pdf().set(opt).from(element).save().then(() => {
+                document.querySelector('button[onclick="gerarPDF()"]').innerHTML = originalBtnText;
+            });
+        }
+
+        function abrirModalQR() {
+            if (!currentResults) return;
+            
+            let qrCodeUrl = "";
+
+            // ATENÇÃO: Verificação de ambiente. O celular só pode acessar sites online.
+            if (window.location.protocol === 'file:') {
+                alert("⚠️ AVISO IMPORTANTE:\n\nComo este arquivo está rodando diretamente no seu computador localmente, o celular não conseguirá acessá-lo para baixar o PDF (pois o celular não tem acesso ao seu disco rígido).\n\nPara a geração de PDF no celular funcionar perfeitamente, você precisará hospedar este HTML na internet (ex: Netlify, Vercel ou Github Pages).\n\nPor enquanto, o QR Code apenas exibirá o resumo em texto na tela do celular.");
+                
+                const res = currentResults;
+                const qrText = `Avaliação Nutricional\nIMC: ${res.imc} (${res.classificacao})\nPeso Atual: ${res.pesoAtual}kg\nA Perder para Ideal: ${res.kgParaPerder}kg\nMeta -5%: ${res.pesoMeta5}kg\nCintura: ${res.cinturaAtual}cm (Meta: <${res.limiteCintura}cm)`;
+                qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(qrText)}`;
+            } else {
+                // Modo "Mágico": Gera o link do próprio aplicativo carregando os resultados escondidos na URL!
+                const baseUrl = window.location.origin + window.location.pathname;
+                const encodedData = btoa(unescape(encodeURIComponent(JSON.stringify(currentResults))));
+                const shareUrl = `${baseUrl}?share=${encodedData}`;
+                
+                // O QR Code aponta para o seu app com o parâmetro ?share=...
+                qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(shareUrl)}`;
+            }
+            
+            document.getElementById('qr-image').src = qrCodeUrl;
+            document.getElementById('qr-modal').classList.remove('hidden');
+            document.getElementById('qr-modal').classList.add('flex');
+        }
+
+        function fecharModalQR() {
+            document.getElementById('qr-modal').classList.add('hidden');
+            document.getElementById('qr-modal').classList.remove('flex');
+        }
+    </script>
+</body>
+</html>
