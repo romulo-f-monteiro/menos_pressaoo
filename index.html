@@ -14,6 +14,12 @@
     <style>
         /* Pequenos ajustes para impressão PDF */
         .pdf-content { background-color: white !important; }
+        
+        /* Remove o cabeçalho e rodapé padrão do navegador (que inclui a URL) na hora de imprimir/salvar PDF */
+        @media print {
+            @page { margin: 0; }
+            body { margin: 1.6cm; }
+        }
     </style>
 </head>
 <body class="bg-slate-50 font-sans text-slate-800 min-h-screen py-8 px-4 flex flex-col">
@@ -119,7 +125,7 @@
 
     <!-- Rodapé UFSC -->
     <footer class="mt-12 text-center text-sm text-slate-400 font-medium pb-8 w-full">
-        Desenvolvido por pesquisadores da UFSC
+        Desenvolvido por pesquisadores da UFSC / <a href="https://www.instagram.com/romulof.monteiro/" target="_blank" rel="noopener noreferrer" class="hover:text-blue-500 font-semibold transition-colors">Rômulo F. Monteiro (@romulof.monteiro)</a>
     </footer>
 
     <!-- Modal QR Code -->
@@ -399,8 +405,8 @@
                 alert("⚠️ AVISO IMPORTANTE:\n\nComo este arquivo está rodando diretamente no seu computador localmente, o celular não conseguirá acessá-lo para baixar o PDF (pois o celular não tem acesso ao seu disco rígido).\n\nPara a geração de PDF no celular funcionar perfeitamente, você precisará hospedar este HTML na internet (ex: Netlify, Vercel ou Github Pages).\n\nPor enquanto, o QR Code apenas exibirá o resumo em texto na tela do celular.");
                 
                 const res = currentResults;
-                // Removi a informação do "Peso Ideal/A Perder" daqui também para manter o segredo do paciente.
-                const qrText = `Avaliação Nutricional\nIMC: ${res.imc} (${res.classificacao})\nPeso Atual: ${res.pesoAtual}kg\nMeta -5%: ${res.pesoMeta5}kg\nCintura: ${res.cinturaAtual}cm (Meta: <${res.limiteCintura}cm)`;
+                // Removido o peso ideal, mas mantidas as metas de 5% e 10% explícitas para o paciente
+                const qrText = `Avaliação Nutricional\nIMC: ${res.imc} (${res.classificacao})\nPeso Atual: ${res.pesoAtual}kg\nMeta -5%: ${res.pesoMeta5}kg\nMeta -10%: ${res.pesoMeta10}kg\nCintura: ${res.cinturaAtual}cm (Meta: <${res.limiteCintura}cm)`;
                 qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(qrText)}`;
             } else {
                 // Modo "Mágico": Gera o link do próprio aplicativo carregando os resultados escondidos na URL!
