@@ -142,7 +142,7 @@
         // Variável global para armazenar os resultados e gerar o QR Code
         let currentResults = null;
 
-        // NOVO: Verificar se há dados na URL (quando o paciente escaneia o QR Code)
+        // Verificar se há dados na URL (quando o paciente escaneia o QR Code)
         window.addEventListener('DOMContentLoaded', () => {
             const urlParams = new URLSearchParams(window.location.search);
             const shareData = urlParams.get('share');
@@ -162,7 +162,8 @@
                     document.getElementById('action-buttons').style.display = 'none';
                     document.getElementById('patient-actions').classList.remove('hidden');
 
-                    renderizarRelatorio();
+                    // Passamos "true" para indicar que é a visão do paciente
+                    renderizarRelatorio(true);
 
                 } catch (e) {
                     console.error("Erro ao ler os dados compartilhados", e);
@@ -246,10 +247,12 @@
                 data: new Date().toLocaleDateString('pt-BR')
             };
 
-            renderizarRelatorio();
+            // Passamos "false" para indicar que é a visão do profissional
+            renderizarRelatorio(false);
         });
 
-        function renderizarRelatorio() {
+        // Adicionado o parâmetro isPatientView
+        function renderizarRelatorio(isPatientView = false) {
             const res = currentResults;
             const reportContainer = document.getElementById('report-content');
             
@@ -257,7 +260,7 @@
             
             if (parseFloat(res.kgParaPerder) > 0) {
                 metasIntermediariasHTML = `
-                    <div class="bg-blue-50/50 p-5 rounded-xl border border-blue-100">
+                    <div class="bg-blue-50/50 p-5 rounded-xl border border-blue-100 mb-6">
                         <h3 class="text-blue-900 font-semibold mb-3">Plano de Pequenas Metas (Realistas)</h3>
                         <p class="text-sm text-blue-800 mb-4">Perdas de 5% a 10% do peso inicial já promovem grandes melhorias na saúde metabólica.</p>
                         
@@ -299,6 +302,29 @@
                         <p class="text-green-600 font-semibold">Cintura dentro do normal!</p>
                    </div>`;
 
+            // Bloco de Peso Saudável (Condicional)
+            const pesoSaudavelHTML = !isPatientView ? `
+                <div class="bg-slate-50 p-4 rounded-xl border border-slate-100 mb-6">
+                    <h3 class="text-slate-800 font-semibold mb-2">Meta: Peso Saudável</h3>
+                    <div class="space-y-1 text-sm">
+                        <p class="flex justify-between"><span>Peso Limite Ideal:</span> <span class="font-bold">${res.pesoIdeal} kg</span></p>
+                        ${metaPesoIdealInfo}
+                    </div>
+                </div>
+            ` : '';
+
+            // Bloco de Cintura (Agora sempre será independente e renderizado após as metas)
+            const cinturaHTML = `
+                <div class="bg-slate-50 p-4 rounded-xl border border-slate-100 mb-6">
+                    <h3 class="text-slate-800 font-semibold mb-2">Circunferência da Cintura</h3>
+                    <div class="space-y-1 text-sm">
+                        <p class="flex justify-between"><span>Medida Atual:</span> <span class="font-bold">${res.cinturaAtual} cm</span></p>
+                        <p class="flex justify-between"><span>Limite Saudável:</span> <span>&lt; ${res.limiteCintura} cm</span></p>
+                        ${metaCinturaInfo}
+                    </div>
+                </div>
+            `;
+
             reportContainer.innerHTML = `
                 <div class="border-b border-slate-200 pb-4 mb-6">
                     <h2 class="text-2xl font-bold text-slate-900">Relatório de Avaliação Nutricional</h2>
@@ -316,26 +342,14 @@
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-100">
-                        <h3 class="text-slate-800 font-semibold mb-2">Meta: Peso Saudável</h3>
-                        <div class="space-y-1 text-sm">
-                            <p class="flex justify-between"><span>Peso Limite Ideal:</span> <span class="font-bold">${res.pesoIdeal} kg</span></p>
-                            ${metaPesoIdealInfo}
-                        </div>
-                    </div>
+                <!-- Peso Saudável: Aparece para profissional, não aparece para paciente -->
+                ${pesoSaudavelHTML}
 
-                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-100">
-                        <h3 class="text-slate-800 font-semibold mb-2">Circunferência da Cintura</h3>
-                        <div class="space-y-1 text-sm">
-                            <p class="flex justify-between"><span>Medida Atual:</span> <span class="font-bold">${res.cinturaAtual} cm</span></p>
-                            <p class="flex justify-between"><span>Limite Saudável:</span> <span>&lt; ${res.limiteCintura} cm</span></p>
-                            ${metaCinturaInfo}
-                        </div>
-                    </div>
-                </div>
-
+                <!-- Plano de Pequenas Metas -->
                 ${metasIntermediariasHTML}
+
+                <!-- Circunferência da Cintura (Movido para cá) -->
+                ${cinturaHTML}
 
                 <div class="mt-8 text-center text-xs text-slate-400">
                     <p>Documento gerado pela Calculadora Nutricional Automática</p>
@@ -385,7 +399,8 @@
                 alert("⚠️ AVISO IMPORTANTE:\n\nComo este arquivo está rodando diretamente no seu computador localmente, o celular não conseguirá acessá-lo para baixar o PDF (pois o celular não tem acesso ao seu disco rígido).\n\nPara a geração de PDF no celular funcionar perfeitamente, você precisará hospedar este HTML na internet (ex: Netlify, Vercel ou Github Pages).\n\nPor enquanto, o QR Code apenas exibirá o resumo em texto na tela do celular.");
                 
                 const res = currentResults;
-                const qrText = `Avaliação Nutricional\nIMC: ${res.imc} (${res.classificacao})\nPeso Atual: ${res.pesoAtual}kg\nA Perder para Ideal: ${res.kgParaPerder}kg\nMeta -5%: ${res.pesoMeta5}kg\nCintura: ${res.cinturaAtual}cm (Meta: <${res.limiteCintura}cm)`;
+                // Removi a informação do "Peso Ideal/A Perder" daqui também para manter o segredo do paciente.
+                const qrText = `Avaliação Nutricional\nIMC: ${res.imc} (${res.classificacao})\nPeso Atual: ${res.pesoAtual}kg\nMeta -5%: ${res.pesoMeta5}kg\nCintura: ${res.cinturaAtual}cm (Meta: <${res.limiteCintura}cm)`;
                 qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(qrText)}`;
             } else {
                 // Modo "Mágico": Gera o link do próprio aplicativo carregando os resultados escondidos na URL!
